@@ -1,8 +1,7 @@
-ThisBuild / version := "0.1.0-SNAPSHOT"
+name := "Projet Rakowski & Estoup--Streiff"
 
-ThisBuild / scalaVersion := "2.13.8"
+version := "0.1"
 
-lazy val root = (project in file("."))
-  .settings(
-    name := "project"
-  )
+scalaVersion := "3.1.0"
+
+libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.10" % "test"
