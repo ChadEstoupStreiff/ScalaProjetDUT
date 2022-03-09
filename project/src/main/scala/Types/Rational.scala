@@ -1,3 +1,5 @@
+package Types
+
 class Rational {
 
 }
