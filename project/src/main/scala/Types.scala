@@ -39,7 +39,7 @@ object Types {
       else
         0
 
-    def equals(rational: Rational): Boolean = numerateur == rational.numerateur && denominateur == rational.denominateur
+    override def equals(rational: Any): Boolean = numerateur == rational.asInstanceOf[Rational].numerateur && denominateur == rational.asInstanceOf[Rational].denominateur
 
     override def hashCode(): Int = 0
   }
@@ -73,7 +73,7 @@ object Types {
   class Polynomial(val suivant: Polynomial, val a: Rational, var deg: Int) {
     def eval(x: Rational): Rational =
       if (deg == 0 || suivant.equals(null)) then
-        a.times(x);
+        a
       else
         a.pow(deg).plus(suivant.eval(suivant.a));
   }

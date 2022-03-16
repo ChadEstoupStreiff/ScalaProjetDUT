@@ -9,13 +9,17 @@ class TestPolynomial extends AnyFlatSpec{
     val r1 = new Rational(2,1)
     val r2 = new Rational(4,2)
     val r3 = new Rational(3,1)
-    
+
     val p3 = new Polynomial(null, r3, 0);
     val p2 = new Polynomial(p3, r2, 1);
     val p1 = new Polynomial(p2, r1, 2);
-    
-    val x = new Rational(1,1)
-    p1.eval(x) shouldBe new Rational(9,1)
+
+    val x = new Rational(1,1);
+    val expected = new Rational(9,1);
+    val actual = p1.eval(x);
+    println( expected.numerateur + " / " + expected.denominateur )
+    println( actual.numerateur+ " / " + actual.denominateur)
+    actual.equals(expected) shouldBe true
   }
 
 }
