@@ -19,10 +19,7 @@ object Types {
       else if (deg == 1) then
         this
       else
-        times(pow(deg - 1));
-
-    def isEmpty(): Boolean =
-      numerateur.equals(null) && denominateur.equals(null)
+        times(pow(deg - 1)).simplify();
 
     def simplify(): Rational =
       @tailrec
