@@ -14,7 +14,11 @@ object Types {
     def div(rational: Rational): Rational = new Rational(numerateur * rational.denominateur, denominateur * rational.numerateur).simplify()
 
     def pow(deg: Int): Rational =
-      if (deg == 0) then
+      if (deg < -1)
+        times(pow(deg * (-1) - 1).invert()).simplify()
+      else if (deg == -1)
+        this.invert()
+      else if (deg == 0) then
         new Rational(1, 1)
       else if (deg == 1) then
         this
@@ -89,7 +93,7 @@ object Types {
     case Sub(left: ArithExpr, right: ArithExpr)
     case Mult(left: ArithExpr, right: ArithExpr)
     case Div(left: ArithExpr, right: ArithExpr)
-    case Pow(left: ArithExpr, deg: Int)
+    case Pow(left: ArithExpr, exp: ArithExpr)
 
     def eval(x: Rational): Rational = this match {
       case ArithExpr.Variable => x
@@ -99,7 +103,7 @@ object Types {
       case ArithExpr.Sub(left: ArithExpr, right: ArithExpr) => left.eval(x).minus(right.eval(x))
       case ArithExpr.Mult(left: ArithExpr, right: ArithExpr) => left.eval(x).times(right.eval(x))
       case ArithExpr.Div(left: ArithExpr, right: ArithExpr) => left.eval(x).div(right.eval(x))
-      case ArithExpr.Pow(left: ArithExpr, deg: Int) => left.eval(x).pow(deg)
+      case ArithExpr.Pow(left: ArithExpr, deg: ArithExpr) => left.eval(x).pow(new RationalIsFractional().toInt(deg.eval(x)))
     }
 
 
