@@ -42,6 +42,8 @@ object Types {
     override def equals(rational: Any): Boolean = numerateur == rational.asInstanceOf[Rational].numerateur && denominateur == rational.asInstanceOf[Rational].denominateur
 
     override def hashCode(): Int = 0
+
+    override def toString: String = numerateur + "/" + denominateur
   }
 
   class RationalIsFractional extends Fractional[Rational] {
