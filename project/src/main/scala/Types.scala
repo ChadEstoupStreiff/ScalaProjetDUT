@@ -43,6 +43,8 @@ object Types {
         0
 
     def equals(rational: Rational): Boolean = numerateur == rational.numerateur && denominateur == rational.denominateur
+
+    override def hashCode(): Int = 0
   }
 
   class RationalIsFractional extends Fractional[Rational] {
