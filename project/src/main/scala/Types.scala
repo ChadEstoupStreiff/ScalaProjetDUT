@@ -80,9 +80,22 @@ object Types {
   }
 
 
-  class SymbolicFunction(val formula: String) {
+  enum ArithExpr:
+    case Variable
+    case Constant(v: Rational)
+    //case Neg(e: ArithExpr)
+    case Add
+    case Sub
+    case Mult
 
+
+  class SymbolicFunction(operation: ArithExpr, left: SymbolicFunction, right: SymbolicFunction) {
+    def eval(x: Rational): Rational = operation match {
+      case ArithExpr.Variable => x
+      case ArithExpr.Constant(v: Rational) => v
+      case ArithExpr.Add => left.eval(x).plus(right.eval(x))
+      case ArithExpr.Sub => left.eval(x).minus(right.eval(x))
+      case ArithExpr.Mult => left.eval(x).times(right.eval(x))
+    }
   }
 }
-
-
