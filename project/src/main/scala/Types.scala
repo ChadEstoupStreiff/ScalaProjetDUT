@@ -84,19 +84,26 @@ object Types {
   enum ArithExpr:
     case Variable
     case Constant(v: Rational)
-    //case Neg(e: ArithExpr)
-    case Add
-    case Sub
-    case Mult
+    case Neg(a: ArithExpr)
+    case Add(left: ArithExpr, right: ArithExpr)
+    case Sub(left: ArithExpr, right: ArithExpr)
+    case Mult(left: ArithExpr, right: ArithExpr)
+    case Div(left: ArithExpr, right: ArithExpr)
+    case Pow(left: ArithExpr, deg: Int)
 
-
-  class SymbolicFunction(operation: ArithExpr, left: SymbolicFunction, right: SymbolicFunction) {
-    def eval(x: Rational): Rational = operation match {
+    def eval(x: Rational): Rational = this match {
       case ArithExpr.Variable => x
       case ArithExpr.Constant(v: Rational) => v
-      case ArithExpr.Add => left.eval(x).plus(right.eval(x))
-      case ArithExpr.Sub => left.eval(x).minus(right.eval(x))
-      case ArithExpr.Mult => left.eval(x).times(right.eval(x))
+      case ArithExpr.Neg(a: ArithExpr) => a.eval(x).negate()
+      case ArithExpr.Add(left: ArithExpr, right: ArithExpr) => left.eval(x).plus(right.eval(x))
+      case ArithExpr.Sub(left: ArithExpr, right: ArithExpr) => left.eval(x).minus(right.eval(x))
+      case ArithExpr.Mult(left: ArithExpr, right: ArithExpr) => left.eval(x).times(right.eval(x))
+      case ArithExpr.Div(left: ArithExpr, right: ArithExpr) => left.eval(x).div(right.eval(x))
+      case ArithExpr.Pow(left: ArithExpr, deg: Int) => left.eval(x).pow(deg)
     }
+
+
+  class SymbolicFunction(operation: ArithExpr) {
+    def eval(x: Rational): Rational = operation.eval(x)
   }
 }
