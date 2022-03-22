@@ -43,6 +43,8 @@ object Types {
       else
         0
 
+    def isPositive(): Boolean = numerateur * denominateur >= 0
+
     override def equals(rational: Any): Boolean = numerateur == rational.asInstanceOf[Rational].numerateur && denominateur == rational.asInstanceOf[Rational].denominateur
 
     override def hashCode(): Int = 0
@@ -106,8 +108,101 @@ object Types {
       case ArithExpr.Pow(left: ArithExpr, deg: ArithExpr) => left.eval(x).pow(new RationalIsFractional().toInt(deg.eval(x)))
     }
 
+    def lim(x: RationalLimit): RationalLimit = this match {
+      case ArithExpr.Variable => x
+      case ArithExpr.Constant(v: Rational) => new RationalLimit(false, v.numerateur, v.denominateur)
+      case ArithExpr.Neg(a: ArithExpr) => a.lim(x).negate()
+      case ArithExpr.Add(left: ArithExpr, right: ArithExpr) => left.lim(x).plus(right.lim(x))
+      case ArithExpr.Sub(left: ArithExpr, right: ArithExpr) => left.lim(x).minus(right.lim(x))
+      case ArithExpr.Mult(left: ArithExpr, right: ArithExpr) => left.lim(x).times(right.lim(x))
+      case ArithExpr.Div(left: ArithExpr, right: ArithExpr) => left.lim(x).div(right.lim(x))
+      case ArithExpr.Pow(left: ArithExpr, deg: ArithExpr) => left.lim(x).pow(new RationalIsFractional().toInt(deg.lim(x)))
+    }
+
+
+  class RationalLimit(val infinite: Boolean, numerateur: Int, denominateur: Int) extends Rational(numerateur: Int, denominateur: Int) {
+    override def negate(): RationalLimit =
+      val l = super.negate(); new RationalLimit(infinite, l.numerateur, l.denominateur)
+
+    override def invert(): RationalLimit =
+      val l = super.invert(); new RationalLimit(infinite, l.numerateur, l.denominateur)
+
+    override def plus(rational: Rational): Rational = super.plus(rational.asInstanceOf[RationalLimit])
+
+    def plus(rational: RationalLimit): RationalLimit = infinite match {
+      case true => rational.infinite match {
+        case true => if (isPositive() == rational.isPositive()) then new RationalLimit(true, numerateur, denominateur) else throw new ArithmeticException("Addition d'infini aux signes contraires")
+        case false => new RationalLimit(true, numerateur, denominateur)
+      }
+      case false => rational.infinite match {
+        case true => new RationalLimit(rational.infinite, rational.numerateur, rational.denominateur)
+        case false => new RationalLimit(false, numerateur + rational.numerateur, denominateur + rational.denominateur)
+      }
+    }
+
+    override def minus(rational: Rational): Rational = super.minus(rational.asInstanceOf[RationalLimit])
+
+    def minus(rational: RationalLimit): RationalLimit =  infinite match {
+      case true => rational.infinite match {
+        case true => if (isPositive() == rational.isPositive()) then new RationalLimit(true, numerateur, denominateur) else throw new ArithmeticException("Addition d'infini aux signes contraires")
+        case false => new RationalLimit(true, numerateur, denominateur)
+      }
+      case false => rational.infinite match {
+        case true => new RationalLimit(rational.infinite, rational.numerateur, rational.denominateur)
+        case false => new RationalLimit(false, numerateur - rational.numerateur, denominateur - rational.denominateur)
+      }
+    }
+
+    override def times(rational: Rational): Rational = super.times(rational.asInstanceOf[RationalLimit])
+
+    def times(rational: RationalLimit): RationalLimit = new RationalLimit(infinite || rational.infinite, numerateur * rational.numerateur, denominateur * rational.denominateur)
+
+    override def div(rational: Rational): Rational = super.div(rational.asInstanceOf[RationalLimit])
+
+    def div(rational: RationalLimit): RationalLimit = infinite match {
+      case true => rational.infinite match {
+        case true => throw new ArithmeticException("Division de deux infinis")
+        case false => new RationalLimit(true, numerateur * rational.denominateur, denominateur * rational.numerateur)
+      }
+      case false => rational.infinite match {
+        case true => new RationalLimit(false, 0, 1)
+        case false => new RationalLimit(false, numerateur * rational.denominateur, denominateur * rational.numerateur)
+      }
+    }
+
+    override def pow(deg: Int): RationalLimit = infinite match {
+      case true => new RationalLimit(infinite, numerateur, denominateur)
+      case false => val l = super.pow(deg); new RationalLimit(infinite, l.numerateur, l.denominateur)
+    }
+
+    override def simplify(): RationalLimit = infinite match {
+      case true => if isPositive() then new RationalLimit(infinite, 1, 1) else new RationalLimit(infinite, -1, 1)
+      case false => val l = super.simplify(); new RationalLimit(infinite, l.numerateur, l.denominateur)
+    }
+
+    override def compare(rational: Rational): Int = this.compare(rational.asInstanceOf[RationalLimit])
+
+    def compare(rational: RationalLimit): Int = infinite match {
+      case true => if isPositive() then 1 else -1
+      case false => rational.infinite match {
+        case true => rational.compare(this)
+        case false => super.compare(rational)
+      }
+    }
+
+    override def equals(rational: Any): Boolean = infinite ==
+      rational.asInstanceOf[RationalLimit].infinite &&(
+      (infinite && isPositive() == rational.asInstanceOf[Rational].isPositive())
+      || (!infinite && super.equals(rational)))
+
+    override def toString: String = infinite match {
+      case true => if isPositive() then "+inf" else "-inf"
+      case false => super.toString()
+    }
+  }
 
   class SymbolicFunction(operation: ArithExpr) {
     def eval(x: Rational): Rational = operation.eval(x)
+    def lim(x: RationalLimit): RationalLimit = operation.lim(x)
   }
 }
