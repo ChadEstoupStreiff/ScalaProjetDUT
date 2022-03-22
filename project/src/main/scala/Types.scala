@@ -73,12 +73,76 @@ object Types {
   }
 
   class Polynomial(val suivant: Polynomial, val a: Rational, var deg: Int) {
+
+    override def toString: String =
+      if(suivant == null) then
+        if(deg == 0) then
+          a.toString();
+        else
+          a.toString() + "x^" + deg;
+      else
+        if(deg == 0) then
+          a.toString() + " + " + suivant.toString();
+        else
+          a.toString() + "x^" + deg + " + " + suivant.toString();
+
     def eval(x: Rational): Rational =
-      if (deg == 0 || suivant.equals(null)) then
+      if (deg == 0 || suivant == null) then
         a
       else
         a.pow(deg).plus(suivant.eval(suivant.a));
+
+    def concatenate(p : Polynomial): Polynomial =
+      if (suivant == null) then
+        new Polynomial(p, this.a, this.deg);
+      else
+        new Polynomial(suivant.concatenate(p), a, deg);
+
+    def plusSimplePoly(p : Polynomial): Polynomial = //ajoute un simple poly a this
+      if(suivant == null) then
+        if(this.deg == p.deg)then
+          new Polynomial(null, a.plus(p.a), p.deg);
+        else
+          new Polynomial(p, a.simplify(), deg);
+      else if (this.deg == p.deg) then
+        suivant.plusSimplePoly(new Polynomial(null, a.plus(p.a), deg));
+      else
+        println(a.simplify());
+        new Polynomial(this.suivant.plusSimplePoly(p), a.simplify(), deg);
+
+    def plus(p : Polynomial): Polynomial =
+      if(p.suivant == null) then
+        this.plusSimplePoly(p);
+      else
+        this.plusSimplePoly(new Polynomial(null, p.a, p.deg)).plus(p.suivant);
+
+    def simplify(): Polynomial =
+      if(suivant == null) then
+        this.plusSimplePoly(new Polynomial(null, a, deg));
+      else
+        this.suivant.plusSimplePoly(new Polynomial(null, a, deg)).simplify();
+
+    def containsSimple(p : Polynomial): Boolean =
+      if(suivant == null) then
+        a.equals(p.a) && deg == p.deg
+      else
+        (a.equals(p.a) && deg == p.deg) || suivant.containsSimple(p)
+
+    def contains(p: Polynomial): Boolean =
+      if(p.suivant == null) then
+        this.containsSimple(p);
+      else
+        this.containsSimple(p) && this.contains(p.suivant)
+
+    override def equals(p : Any): Boolean =
+      this.contains(p.asInstanceOf[Polynomial]) && p.asInstanceOf[Polynomial].contains(this);
+
+
+
+
+
   }
+
 
 
   enum ArithExpr:
