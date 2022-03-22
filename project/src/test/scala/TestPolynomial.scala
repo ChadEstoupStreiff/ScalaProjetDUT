@@ -40,18 +40,19 @@ class TestPolynomial extends AnyFlatSpec{
     val pSimplifyActual = p6.simplify();
     println(pSimplifyActual);
     println(pSimplifyExp);
-    pSimplifyActual.equals(pSimplifyExp) shouldBe true;
+    pSimplifyActual.equals(pSimplifyExp) shouldBe true;*/
 
 
     //plus
-    val p7 = new Polynomial(null, new Rational(5,1), 2);
-    val p8 = new Polynomial(p7, new Rational(1,2), 0);
+    val p7 = new Polynomial(null, new Rational(1,2), 0);
+    val p8 = new Polynomial(p7, new Rational(5,1), 2);
 
-    val pExpected  = new Polynomial(new Polynomial(new Polynomial(null, new Rational(5,1), 0), new Rational(2,1), 1), new Rational(7,1), 2);
+    val pExpected  = new Polynomial(new Polynomial(new Polynomial(null, new Rational(7,2), 0), new Rational(2,1), 1), new Rational(7,1), 2);
     val pActual = p1.plus(p8);
     println(pActual);
     println(pExpected);
-    pActual.equals(pExpected) shouldBe true;*/
+    pActual.equals(pExpected) shouldBe true;
+
   }
 
 }

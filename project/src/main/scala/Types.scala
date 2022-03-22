@@ -113,7 +113,6 @@ object Types {
       else if (this.deg == p.deg) then
         suivant.plusSimplePoly(new Polynomial(null, a.plus(p.a), deg));
       else
-        println(a.simplify());
         new Polynomial(this.suivant.plusSimplePoly(p), a.simplify(), deg);
 
     def plus(p : Polynomial): Polynomial =
