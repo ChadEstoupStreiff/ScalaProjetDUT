@@ -57,7 +57,7 @@ object Types {
 
     def minus(x: Rational, y: Rational): Rational = x.minus(y)
 
-    def parseString(str: String): Option[Rational] = ???
+    def parseString(str: String): Option[Rational] = Option[Rational] {new Rational(str.split("/")(0).toInt, str.split("/")(1).toInt)}
 
     def plus(x: Rational, y: Rational): Rational = x.plus(y)
 

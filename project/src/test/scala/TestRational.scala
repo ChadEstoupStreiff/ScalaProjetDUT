@@ -2,6 +2,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers.shouldBe
 
 import Types.Rational
+import Types.RationalIsFractional
 
 class TestRational extends AnyFlatSpec {
 
@@ -75,5 +76,12 @@ class TestRational extends AnyFlatSpec {
     r1.div(r2) shouldBe new Rational(10, 3)
     r2.div(r3) shouldBe new Rational(3, 8)
     r3.div(r1) shouldBe new Rational(4, 5)
+  }
+
+  "parseString" should "be defined" in {
+    new RationalIsFractional().parseString("2/5") shouldBe Option[Rational] {new Rational(2, 5)}
+    new RationalIsFractional().parseString("2/15") shouldBe Option[Rational] {new Rational(2, 15)}
+    new RationalIsFractional().parseString("13/5") shouldBe Option[Rational] {new Rational(13, 5)}
+    new RationalIsFractional().parseString("12/55") shouldBe Option[Rational] {new Rational(12, 55)}
   }
 }
