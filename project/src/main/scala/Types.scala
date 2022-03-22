@@ -121,11 +121,28 @@ object Types {
       else
         this.plusSimplePoly(new Polynomial(null, p.a, p.deg)).plus(p.suivant);
 
+    def minusSimplePoly(p : Polynomial): Polynomial =
+      if(suivant == null) then
+        if(this.deg == p.deg)then
+          new Polynomial(null, a.minus(p.a), p.deg);
+        else
+          new Polynomial(p, a.simplify(), deg);
+      else if (this.deg == p.deg) then
+        suivant.minusSimplePoly(new Polynomial(null, a.minus(p.a), deg));
+      else
+        new Polynomial(this.suivant.minusSimplePoly(p), a.simplify(), deg);
+
+    def minus(p : Polynomial): Polynomial =
+      if(p.suivant == null) then
+        this.minusSimplePoly(p);
+      else
+        this.minusSimplePoly(new Polynomial(null, p.a, p.deg)).minus(p.suivant);
+
     def simplify(): Polynomial =
       if(suivant == null) then
         this.plusSimplePoly(new Polynomial(null, a, deg));
       else
-        this.suivant.plusSimplePoly(new Polynomial(null, a, deg)).simplify();
+        suivant.plusSimplePoly(new Polynomial(null, a, deg)).simplify();
 
     def containsSimple(p : Polynomial): Boolean =
       if(suivant == null) then
@@ -141,10 +158,6 @@ object Types {
 
     override def equals(p : Any): Boolean =
       this.contains(p.asInstanceOf[Polynomial]) && p.asInstanceOf[Polynomial].contains(this);
-
-
-
-
 
   }
 

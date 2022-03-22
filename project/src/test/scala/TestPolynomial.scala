@@ -31,16 +31,16 @@ class TestPolynomial extends AnyFlatSpec{
      println(pSimlpleActual);
      println(pSimpleExp);
      pSimlpleActual.equals(pSimpleExp) shouldBe true;
-/*
+
     //simplify
-    val p5 = new Polynomial(p4, new Rational(1,1),1);
+    val p5 = new Polynomial(p4, new Rational(2,1),1);
     val p6 = new Polynomial(p5, new Rational(5,1), 2);
 
     val pSimplifyExp = new Polynomial(new Polynomial(null, new Rational(1,1), 1), new Rational(7,1), 2);
     val pSimplifyActual = p6.simplify();
     println(pSimplifyActual);
     println(pSimplifyExp);
-    pSimplifyActual.equals(pSimplifyExp) shouldBe true;*/
+    pSimplifyActual.equals(pSimplifyExp) shouldBe true;
 
 
     //plus
