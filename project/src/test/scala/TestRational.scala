@@ -6,6 +6,18 @@ import Types.RationalIsFractional
 
 class TestRational extends AnyFlatSpec {
 
+  "Equals" should "be defined" in {
+    val r1 = new Rational(4, 2)
+    val r2 = new Rational(3, 5)
+    val r3 = new Rational(24, 24)
+    val r4 = new Rational(30, 20)
+
+    r1 shouldBe new Rational(8, 4)
+    r2 shouldBe new Rational(12, 20)
+    r3 shouldBe new Rational(12, 12)
+    r4 shouldBe new Rational(3, 2)
+  }
+
   "Simplify" should "be defined" in {
     val r1 = new Rational(4, 2)
     val r2 = new Rational(3, 5)
@@ -76,6 +88,14 @@ class TestRational extends AnyFlatSpec {
     r1.div(r2) shouldBe new Rational(10, 3)
     r2.div(r3) shouldBe new Rational(3, 8)
     r3.div(r1) shouldBe new Rational(4, 5)
+  }
+
+  "pow" should "be defined" in {
+    val r1 = new Rational(2, 3)
+
+    r1.pow(3) shouldBe new Rational(8, 27)
+    r1.pow(-3) shouldBe new Rational(27, 8)
+    r1.pow(2) shouldBe new Rational(4, 9)
   }
 
   "parseString" should "be defined" in {
