@@ -47,7 +47,7 @@ object Types {
 
     override def hashCode(): Int = 0
 
-    override def toString: String = numerateur + "/" + denominateur
+    override def toString: String = if denominateur != 1 then numerateur + "/" + denominateur else numerateur.toString
   }
 
   class RationalIsFractional extends Fractional[Rational] {
@@ -182,6 +182,20 @@ object Types {
       case ArithExpr.Pow(left: ArithExpr, deg: ArithExpr) => left.eval(x).pow(new RationalIsFractional().toInt(deg.eval(x)))
     }
 
+    def derivate(): ArithExpr = this match {
+      case ArithExpr.Variable => ArithExpr.Constant(new Rational(1, 1))
+      case ArithExpr.Constant(v: Rational) => ArithExpr.Constant(new Rational(0, 1))
+      case ArithExpr.Neg(a: ArithExpr) => ArithExpr.Neg(a.derivate())
+      case ArithExpr.Add(left: ArithExpr, right: ArithExpr) => ArithExpr.Add(left.derivate(), right.derivate())
+      case ArithExpr.Sub(left: ArithExpr, right: ArithExpr) => ArithExpr.Sub(left.derivate(), right.derivate())
+      case ArithExpr.Mult(left: ArithExpr, right: ArithExpr) =>
+        if left == ArithExpr.Constant then ArithExpr.Mult(left, right.derivate())
+        else if right == ArithExpr.Constant then ArithExpr.Mult(right, left.derivate())
+        else ArithExpr.Add(ArithExpr.Mult(left.derivate(), right), ArithExpr.Mult(left, right.derivate()))
+      case ArithExpr.Div(left: ArithExpr, right: ArithExpr) => ArithExpr.Div(ArithExpr.Sub(ArithExpr.Mult(left.derivate(), right), ArithExpr.Mult(left, right.derivate())), ArithExpr.Mult(right, right))
+      case ArithExpr.Pow(left: ArithExpr, deg: ArithExpr) => ??? //vu^(v−1u)′+log(u)u^(v)v′.
+    }
+
     def lim(x: RationalLimit): RationalLimit = this match {
       case ArithExpr.Variable => x
       case ArithExpr.Constant(v: Rational) => new RationalLimit(false, v.numerateur, v.denominateur)
@@ -201,6 +215,17 @@ object Types {
             else throw new ArithmeticException("Puissance infini d'une fonction <= -1")
           case false => if c.infinite then if l.isPositive() then new RationalLimit(true, 1, 1) else new RationalLimit(true, -1, 1) else left.lim(x).pow(new RationalIsFractional().toInt(deg.lim(x)))
         }
+    }
+
+    override def toString: String = this match {
+      case ArithExpr.Variable => "x"
+      case ArithExpr.Constant(v: Rational) => v.toString
+      case ArithExpr.Neg(a: ArithExpr) => "-" + a.toString
+      case ArithExpr.Add(left: ArithExpr, right: ArithExpr) => left.toString + " + " + right.toString
+      case ArithExpr.Sub(left: ArithExpr, right: ArithExpr) => left.toString + " - " + right.toString
+      case ArithExpr.Mult(left: ArithExpr, right: ArithExpr) => "(" + left.toString + ")*(" + right.toString + ")"
+      case ArithExpr.Div(left: ArithExpr, right: ArithExpr) => "(" + left.toString + ")/(" + right.toString + ")"
+      case ArithExpr.Pow(left: ArithExpr, deg: ArithExpr) => "(" + left.toString + ")^(" + deg.toString + ")"
     }
 
 
@@ -290,6 +315,9 @@ object Types {
 
   class SymbolicFunction(operation: ArithExpr) {
     def eval(x: Rational): Rational = operation.eval(x)
+    def derivate(): SymbolicFunction = new SymbolicFunction(operation.derivate())
     def lim(x: RationalLimit): RationalLimit = operation.lim(x)
+
+    override def toString: String = operation.toString
   }
 }
