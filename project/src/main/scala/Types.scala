@@ -78,6 +78,7 @@ object Types {
     def compare(x: Rational, y: Rational): Int = x.compare(y)
   }
 
+
   class RationalLimit(val infinite: Boolean, numerateur: Int, denominateur: Int) extends Rational(numerateur: Int, denominateur: Int) {
     override def negate(): RationalLimit =
       val l = super.negate(); new RationalLimit(infinite, l.numerateur, l.denominateur)
@@ -162,6 +163,80 @@ object Types {
     }
   }
 
+
+  enum ArithExpr:
+    case Variable
+    case Constant(v: Rational)
+    case Neg(a: ArithExpr)
+    case Add(left: ArithExpr, right: ArithExpr)
+    case Sub(left: ArithExpr, right: ArithExpr)
+    case Mult(left: ArithExpr, right: ArithExpr)
+    case Div(left: ArithExpr, right: ArithExpr)
+    case Pow(left: ArithExpr, exp: ArithExpr)
+    // Fct that can be add that would have been usefull
+    // case Log(a: ArithExpr)
+    // case cos(a: ArithExpr)
+    // case sin(a: ArithExpr)
+    // case tan(a: ArithExpr)
+
+    def eval(x: Rational): Rational = this match {
+      case ArithExpr.Variable => x
+      case ArithExpr.Constant(v: Rational) => v
+      case ArithExpr.Neg(a: ArithExpr) => a.eval(x).negate()
+      case ArithExpr.Add(left: ArithExpr, right: ArithExpr) => left.eval(x).plus(right.eval(x))
+      case ArithExpr.Sub(left: ArithExpr, right: ArithExpr) => left.eval(x).minus(right.eval(x))
+      case ArithExpr.Mult(left: ArithExpr, right: ArithExpr) => left.eval(x).times(right.eval(x))
+      case ArithExpr.Div(left: ArithExpr, right: ArithExpr) => left.eval(x).div(right.eval(x))
+      case ArithExpr.Pow(left: ArithExpr, deg: ArithExpr) => left.eval(x).pow(new RationalIsFractional().toInt(deg.eval(x)))
+    }
+
+    def lim(x: RationalLimit): RationalLimit = this match {
+      case ArithExpr.Variable => x
+      case ArithExpr.Constant(v: Rational) => new RationalLimit(false, v.numerateur, v.denominateur)
+      case ArithExpr.Neg(a: ArithExpr) => a.lim(x).negate()
+      case ArithExpr.Add(left: ArithExpr, right: ArithExpr) => left.lim(x).plus(right.lim(x))
+      case ArithExpr.Sub(left: ArithExpr, right: ArithExpr) => left.lim(x).minus(right.lim(x))
+      case ArithExpr.Mult(left: ArithExpr, right: ArithExpr) => left.lim(x).times(right.lim(x))
+      case ArithExpr.Div(left: ArithExpr, right: ArithExpr) => left.lim(x).div(right.lim(x))
+      case ArithExpr.Pow(left: ArithExpr, deg: ArithExpr) =>
+        val c = left.lim(x);
+        val l = deg.lim(x);
+        l.infinite match {
+          case true =>
+            if c.compare(new Rational(-1, 1)) == 1 && c.compare(new Rational(1, 1)) == -1 then new RationalLimit(false, 0, 1)
+            else if c.equals(new RationalLimit(false, 1, 1)) then new RationalLimit(false, 1, 1)
+            else if c.isPositive() then new RationalLimit(true, 1, 1)
+            else throw new ArithmeticException("Puissance infini d'une fonction <= -1")
+          case false => if c.infinite then if l.isPositive() then new RationalLimit(true, 1, 1) else new RationalLimit(true, -1, 1) else left.lim(x).pow(new RationalIsFractional().toInt(deg.lim(x)))
+        }
+    }
+
+    def derivate(): ArithExpr = this match {
+      case ArithExpr.Variable => ArithExpr.Constant(new Rational(1, 1))
+      case ArithExpr.Constant(v: Rational) => ArithExpr.Constant(new Rational(0, 1))
+      case ArithExpr.Neg(a: ArithExpr) => ArithExpr.Neg(a.derivate())
+      case ArithExpr.Add(left: ArithExpr, right: ArithExpr) => ArithExpr.Add(left.derivate(), right.derivate())
+      case ArithExpr.Sub(left: ArithExpr, right: ArithExpr) => ArithExpr.Sub(left.derivate(), right.derivate())
+      case ArithExpr.Mult(left: ArithExpr, right: ArithExpr) =>
+        if left == ArithExpr.Constant then ArithExpr.Mult(left, right.derivate())
+        else if right == ArithExpr.Constant then ArithExpr.Mult(right, left.derivate())
+        else ArithExpr.Add(ArithExpr.Mult(left.derivate(), right), ArithExpr.Mult(left, right.derivate()))
+      case ArithExpr.Div(left: ArithExpr, right: ArithExpr) => ArithExpr.Div(ArithExpr.Sub(ArithExpr.Mult(left.derivate(), right), ArithExpr.Mult(left, right.derivate())), ArithExpr.Mult(right, right))
+      case ArithExpr.Pow(left: ArithExpr, deg: ArithExpr) => ??? // vu^(v−1u)′+log(u)u^(v)v′ => need cos fct
+    }
+
+    override def toString: String = this match {
+      case ArithExpr.Variable => "x"
+      case ArithExpr.Constant(v: Rational) => v.toString
+      case ArithExpr.Neg(a: ArithExpr) => "-" + a.toString
+      case ArithExpr.Add(left: ArithExpr, right: ArithExpr) => left.toString + " + " + right.toString
+      case ArithExpr.Sub(left: ArithExpr, right: ArithExpr) => left.toString + " - " + right.toString
+      case ArithExpr.Mult(left: ArithExpr, right: ArithExpr) => "(" + left.toString + ")*(" + right.toString + ")"
+      case ArithExpr.Div(left: ArithExpr, right: ArithExpr) => "(" + left.toString + ")/(" + right.toString + ")"
+      case ArithExpr.Pow(left: ArithExpr, deg: ArithExpr) => "(" + left.toString + ")^(" + deg.toString + ")"
+    }
+
+
   class Polynomial(val suivant: Polynomial, val a: Rational, var deg: Int) {
 
     def copy(): Polynomial =
@@ -239,14 +314,14 @@ object Types {
       else
         suivant.simplify().plusSimplePoly(this)
 
-    //TODO
+
     def timesSimplePoly(p : Polynomial): Polynomial =
       if(suivant == null) then
         new Polynomial(null, a.times(p.a), deg + p.deg)
       else
         new Polynomial(this.suivant.minusSimplePoly(p), a.times(p.a), deg + p.deg);
 
-    //TODO
+
     def times(p: Polynomial): Polynomial =
       if(p.suivant == null) then
         this.timesSimplePoly(p);
@@ -261,7 +336,6 @@ object Types {
       else
         new RationalLimit(true, a.numerateur, a.denominateur);
 
-    //TODO les tests de limit
     def limit(plusGrand: Polynomial): RationalLimit =
       if (suivant == null) then
         if (plusGrand.deg < this.deg) then
@@ -281,6 +355,19 @@ object Types {
       else
         suivant.limit(plusGrand)
 
+    def derivee(): Polynomial =
+      if(suivant == null) then
+        if(deg !=0) then
+          new Polynomial(null,a.times(new Rational(deg, 1)), deg-1);
+        else
+          null;
+      else
+        if(deg !=0) then
+          new Polynomial(suivant.derivee(), a.times(new Rational(deg, 1)), deg-1);
+        else
+          new Polynomial(suivant.suivant.derivee(), suivant.a.times(new Rational(suivant.deg, 1)), suivant.deg-1);
+
+
     def containsSimple(p : Polynomial): Boolean =
       if(suivant == null) then
         a.equals(p.a) && deg == p.deg
@@ -298,77 +385,6 @@ object Types {
 
   }
 
-  enum ArithExpr:
-    case Variable
-    case Constant(v: Rational)
-    case Neg(a: ArithExpr)
-    case Add(left: ArithExpr, right: ArithExpr)
-    case Sub(left: ArithExpr, right: ArithExpr)
-    case Mult(left: ArithExpr, right: ArithExpr)
-    case Div(left: ArithExpr, right: ArithExpr)
-    case Pow(left: ArithExpr, exp: ArithExpr)
-    // Fct that can be add that would have been usefull
-    // case Log(a: ArithExpr)
-    // case cos(a: ArithExpr)
-    // case sin(a: ArithExpr)
-    // case tan(a: ArithExpr)
-
-    def eval(x: Rational): Rational = this match {
-      case ArithExpr.Variable => x
-      case ArithExpr.Constant(v: Rational) => v
-      case ArithExpr.Neg(a: ArithExpr) => a.eval(x).negate()
-      case ArithExpr.Add(left: ArithExpr, right: ArithExpr) => left.eval(x).plus(right.eval(x))
-      case ArithExpr.Sub(left: ArithExpr, right: ArithExpr) => left.eval(x).minus(right.eval(x))
-      case ArithExpr.Mult(left: ArithExpr, right: ArithExpr) => left.eval(x).times(right.eval(x))
-      case ArithExpr.Div(left: ArithExpr, right: ArithExpr) => left.eval(x).div(right.eval(x))
-      case ArithExpr.Pow(left: ArithExpr, deg: ArithExpr) => left.eval(x).pow(new RationalIsFractional().toInt(deg.eval(x)))
-    }
-
-    def lim(x: RationalLimit): RationalLimit = this match {
-      case ArithExpr.Variable => x
-      case ArithExpr.Constant(v: Rational) => new RationalLimit(false, v.numerateur, v.denominateur)
-      case ArithExpr.Neg(a: ArithExpr) => a.lim(x).negate()
-      case ArithExpr.Add(left: ArithExpr, right: ArithExpr) => left.lim(x).plus(right.lim(x))
-      case ArithExpr.Sub(left: ArithExpr, right: ArithExpr) => left.lim(x).minus(right.lim(x))
-      case ArithExpr.Mult(left: ArithExpr, right: ArithExpr) => left.lim(x).times(right.lim(x))
-      case ArithExpr.Div(left: ArithExpr, right: ArithExpr) => left.lim(x).div(right.lim(x))
-      case ArithExpr.Pow(left: ArithExpr, deg: ArithExpr) =>
-        val c = left.lim(x);
-        val l = deg.lim(x);
-        l.infinite match {
-          case true =>
-            if c.compare(new Rational(-1, 1)) == 1 && c.compare(new Rational(1, 1)) == -1 then new RationalLimit(false, 0, 1)
-            else if c.equals(new RationalLimit(false, 1, 1)) then new RationalLimit(false, 1, 1)
-            else if c.isPositive() then new RationalLimit(true, 1, 1)
-            else throw new ArithmeticException("Puissance infini d'une fonction <= -1")
-          case false => if c.infinite then if l.isPositive() then new RationalLimit(true, 1, 1) else new RationalLimit(true, -1, 1) else left.lim(x).pow(new RationalIsFractional().toInt(deg.lim(x)))
-        }
-    }
-
-    def derivate(): ArithExpr = this match {
-      case ArithExpr.Variable => ArithExpr.Constant(new Rational(1, 1))
-      case ArithExpr.Constant(v: Rational) => ArithExpr.Constant(new Rational(0, 1))
-      case ArithExpr.Neg(a: ArithExpr) => ArithExpr.Neg(a.derivate())
-      case ArithExpr.Add(left: ArithExpr, right: ArithExpr) => ArithExpr.Add(left.derivate(), right.derivate())
-      case ArithExpr.Sub(left: ArithExpr, right: ArithExpr) => ArithExpr.Sub(left.derivate(), right.derivate())
-      case ArithExpr.Mult(left: ArithExpr, right: ArithExpr) =>
-        if left == ArithExpr.Constant then ArithExpr.Mult(left, right.derivate())
-        else if right == ArithExpr.Constant then ArithExpr.Mult(right, left.derivate())
-        else ArithExpr.Add(ArithExpr.Mult(left.derivate(), right), ArithExpr.Mult(left, right.derivate()))
-      case ArithExpr.Div(left: ArithExpr, right: ArithExpr) => ArithExpr.Div(ArithExpr.Sub(ArithExpr.Mult(left.derivate(), right), ArithExpr.Mult(left, right.derivate())), ArithExpr.Mult(right, right))
-      case ArithExpr.Pow(left: ArithExpr, deg: ArithExpr) => ??? // vu^(v−1u)′+log(u)u^(v)v′ => need cos fct
-    }
-
-    override def toString: String = this match {
-      case ArithExpr.Variable => "x"
-      case ArithExpr.Constant(v: Rational) => v.toString
-      case ArithExpr.Neg(a: ArithExpr) => "-" + a.toString
-      case ArithExpr.Add(left: ArithExpr, right: ArithExpr) => left.toString + " + " + right.toString
-      case ArithExpr.Sub(left: ArithExpr, right: ArithExpr) => left.toString + " - " + right.toString
-      case ArithExpr.Mult(left: ArithExpr, right: ArithExpr) => "(" + left.toString + ")*(" + right.toString + ")"
-      case ArithExpr.Div(left: ArithExpr, right: ArithExpr) => "(" + left.toString + ")/(" + right.toString + ")"
-      case ArithExpr.Pow(left: ArithExpr, deg: ArithExpr) => "(" + left.toString + ")^(" + deg.toString + ")"
-    }
 
   class SymbolicFunction(operation: ArithExpr) {
     def eval(x: Rational): Rational = operation.eval(x)
