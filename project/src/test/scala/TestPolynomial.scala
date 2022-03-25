@@ -34,10 +34,11 @@ class TestPolynomial extends AnyFlatSpec{
 
     //simplify
     val p5 = new Polynomial(p4, new Rational(2,1),1);
-    val p6 = new Polynomial(p5, new Rational(5,1), 2);
+    val p6 = new Polynomial(p5, new Rational(5,1), 1);
+    val p6Bis = new Polynomial(p6, new Rational(1,1), 2);
 
-    val pSimplifyExp = new Polynomial(new Polynomial(null, new Rational(1,1), 1), new Rational(7,1), 2);
-    val pSimplifyActual = p6.simplify();
+    val pSimplifyExp = new Polynomial(new Polynomial(null, new Rational(3,1), 2), new Rational(7,1), 1);
+    val pSimplifyActual = p6Bis.simplify();
     println(pSimplifyActual);
     println(pSimplifyExp);
     pSimplifyActual.equals(pSimplifyExp) shouldBe true;
@@ -52,6 +53,8 @@ class TestPolynomial extends AnyFlatSpec{
     println(pActual);
     println(pExpected);
     pActual.equals(pExpected) shouldBe true;
+
+    //simple
 
   }
 

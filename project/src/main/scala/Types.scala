@@ -78,145 +78,6 @@ object Types {
     def compare(x: Rational, y: Rational): Int = x.compare(y)
   }
 
-  class Polynomial(val suivant: Polynomial, val a: Rational, var deg: Int) {
-
-    override def toString: String =
-      if(suivant == null) then
-        if(deg == 0) then
-          a.toString();
-        else
-          a.toString() + "x^" + deg;
-      else
-        if(deg == 0) then
-          a.toString() + " + " + suivant.toString();
-        else
-          a.toString() + "x^" + deg + " + " + suivant.toString();
-
-    def eval(x: Rational): Rational =
-      if (deg == 0 || suivant == null) then
-        a
-      else
-        a.pow(deg).plus(suivant.eval(suivant.a));
-
-    def concatenate(p : Polynomial): Polynomial =
-      if (suivant == null) then
-        new Polynomial(p, this.a, this.deg);
-      else
-        new Polynomial(suivant.concatenate(p), a, deg);
-
-    def remove(p : Polynomial): Polynomial =
-      if(suivant == null) then
-        if(this.equals(p)) then
-          null;
-        else
-          new Polynomial(null, a, deg);
-      else
-        if(this.equals(p)) then
-          new Polynomial(suivant.suivant, suivant.a, suivant.deg);
-        else
-          suivant.remove(p);
-
-
-    def plusSimplePoly(p : Polynomial): Polynomial = //ajoute un simple poly a this
-      if(suivant == null) then
-        if(this.deg == p.deg)then
-          new Polynomial(null, a.plus(p.a), p.deg);
-        else
-          new Polynomial(p, a.simplify(), deg);
-      else if (this.deg == p.deg) then
-        suivant.plusSimplePoly(new Polynomial(null, a.plus(p.a), deg));
-      else
-        new Polynomial(this.suivant.plusSimplePoly(p), a.simplify(), deg);
-
-    def plus(p : Polynomial): Polynomial =
-      if(p.suivant == null) then
-        this.plusSimplePoly(p);
-      else
-        this.plusSimplePoly(new Polynomial(null, p.a, p.deg)).plus(p.suivant);
-
-    def simplify(): Polynomial =
-      if(suivant == null) then
-        new Polynomial(null, a, deg);
-      else
-        this.remove(new Polynomial(null, a, deg));
-        var p = suivant.plusSimplePoly(new Polynomial(null, a, deg));
-        p.simplify();
-
-    def minusSimplePoly(p : Polynomial): Polynomial =
-      if(suivant == null) then
-        if(this.deg == p.deg)then
-          new Polynomial(null, a.minus(p.a), p.deg);
-        else
-          new Polynomial(p, a.simplify(), deg);
-      else if (this.deg == p.deg) then
-        suivant.minusSimplePoly(new Polynomial(null, a.minus(p.a), deg));
-      else
-        new Polynomial(this.suivant.minusSimplePoly(p), a.simplify(), deg);
-
-    def minus(p : Polynomial): Polynomial =
-      if(p.suivant == null) then
-        this.minusSimplePoly(p);
-      else
-        new Polynomial(this.suivant.minusSimplePoly(p), a.simplify(), deg);
-
-    def timesSimplePoly(p : Polynomial): Polynomial =
-      if(suivant == null) then
-        new Polynomial(null, a.times(p.a), deg + p.deg)
-      else
-        new Polynomial(this.suivant.minusSimplePoly(p), a.times(p.a), deg + p.deg);
-
-    def containsSimple(p : Polynomial): Boolean =
-      if(suivant == null) then
-        a.equals(p.a) && deg == p.deg
-      else
-        (a.equals(p.a) && deg == p.deg) || suivant.containsSimple(p)
-
-    def contains(p: Polynomial): Boolean =
-      if(p.suivant == null) then
-        this.containsSimple(p);
-      else
-        this.containsSimple(p) && this.contains(p.suivant)
-
-    override def equals(p : Any): Boolean =
-      this.contains(p.asInstanceOf[Polynomial]) && p.asInstanceOf[Polynomial].contains(this);
-
-  }
-
-
-
-  enum ArithExpr:
-    case Variable
-    case Constant(v: Rational)
-    case Neg(a: ArithExpr)
-    case Add(left: ArithExpr, right: ArithExpr)
-    case Sub(left: ArithExpr, right: ArithExpr)
-    case Mult(left: ArithExpr, right: ArithExpr)
-    case Div(left: ArithExpr, right: ArithExpr)
-    case Pow(left: ArithExpr, exp: ArithExpr)
-
-    def eval(x: Rational): Rational = this match {
-      case ArithExpr.Variable => x
-      case ArithExpr.Constant(v: Rational) => v
-      case ArithExpr.Neg(a: ArithExpr) => a.eval(x).negate()
-      case ArithExpr.Add(left: ArithExpr, right: ArithExpr) => left.eval(x).plus(right.eval(x))
-      case ArithExpr.Sub(left: ArithExpr, right: ArithExpr) => left.eval(x).minus(right.eval(x))
-      case ArithExpr.Mult(left: ArithExpr, right: ArithExpr) => left.eval(x).times(right.eval(x))
-      case ArithExpr.Div(left: ArithExpr, right: ArithExpr) => left.eval(x).div(right.eval(x))
-      case ArithExpr.Pow(left: ArithExpr, deg: ArithExpr) => left.eval(x).pow(new RationalIsFractional().toInt(deg.eval(x)))
-    }
-
-    def lim(x: RationalLimit): RationalLimit = this match {
-      case ArithExpr.Variable => x
-      case ArithExpr.Constant(v: Rational) => new RationalLimit(false, v.numerateur, v.denominateur)
-      case ArithExpr.Neg(a: ArithExpr) => a.lim(x).negate()
-      case ArithExpr.Add(left: ArithExpr, right: ArithExpr) => left.lim(x).plus(right.lim(x))
-      case ArithExpr.Sub(left: ArithExpr, right: ArithExpr) => left.lim(x).minus(right.lim(x))
-      case ArithExpr.Mult(left: ArithExpr, right: ArithExpr) => left.lim(x).times(right.lim(x))
-      case ArithExpr.Div(left: ArithExpr, right: ArithExpr) => left.lim(x).div(right.lim(x))
-      case ArithExpr.Pow(left: ArithExpr, deg: ArithExpr) => left.lim(x).pow(new RationalIsFractional().toInt(deg.lim(x)))
-    }
-
-
   class RationalLimit(val infinite: Boolean, numerateur: Int, denominateur: Int) extends Rational(numerateur: Int, denominateur: Int) {
     override def negate(): RationalLimit =
       val l = super.negate(); new RationalLimit(infinite, l.numerateur, l.denominateur)
@@ -290,13 +151,189 @@ object Types {
     override def equals(rational: Any): Boolean = infinite ==
       rational.asInstanceOf[RationalLimit].infinite &&(
       (infinite && isPositive() == rational.asInstanceOf[Rational].isPositive())
-      || (!infinite && super.equals(rational)))
+        || (!infinite && super.equals(rational)))
 
     override def toString: String = infinite match {
       case true => if isPositive() then "+inf" else "-inf"
       case false => super.toString()
     }
   }
+
+  class Polynomial(val suivant: Polynomial, val a: Rational, var deg: Int) {
+
+    override def toString: String =
+      if(suivant == null) then
+        if(deg == 0) then
+          a.toString();
+        else
+          a.toString() + "x^" + deg;
+      else
+        if(deg == 0) then
+          a.toString() + " + " + suivant.toString();
+        else
+          a.toString() + "x^" + deg + " + " + suivant.toString();
+
+    def eval(x: Rational): Rational =
+      if (deg == 0 || suivant == null) then
+        a
+      else
+        a.pow(deg).plus(suivant.eval(suivant.a));
+
+    def concatenate(p : Polynomial): Polynomial =
+      if (suivant == null) then
+        new Polynomial(p, this.a, this.deg);
+      else
+        new Polynomial(suivant.concatenate(p), a, deg);
+
+    def remove(p : Polynomial): Polynomial =
+      if(suivant == null) then
+        if(this.equals(p)) then
+          null;
+        else
+          new Polynomial(null, a, deg);
+      else
+        if(this.equals(p)) then
+          new Polynomial(suivant.suivant, suivant.a, suivant.deg);
+        else
+          suivant.remove(p);
+
+    def plusSimplePoly(p : Polynomial): Polynomial = //ajoute un simple poly a this
+      if(suivant == null) then
+        if(this.deg == p.deg)then
+          new Polynomial(null, a.plus(p.a), p.deg);
+        else
+          new Polynomial(p, a.simplify(), deg);
+      else if (this.deg == p.deg) then
+        suivant.plusSimplePoly(new Polynomial(null, a.plus(p.a), deg));
+      else
+        new Polynomial(this.suivant.plusSimplePoly(p), a.simplify(), deg);
+
+    def plus(p : Polynomial): Polynomial =
+      if(p.suivant == null) then
+        this.plusSimplePoly(p);
+      else
+        this.plusSimplePoly(new Polynomial(null, p.a, p.deg)).plus(p.suivant);
+
+    //TODO
+    def simplify(): Polynomial =
+      if(suivant == null) then
+        new Polynomial(null, a, deg);
+      else
+        this.remove(new Polynomial(null, a, deg));
+        var p = suivant.plusSimplePoly(new Polynomial(null, a, deg));
+        p.simplify();
+
+    def minusSimplePoly(p : Polynomial): Polynomial =
+      if(suivant == null) then
+        if(this.deg == p.deg)then
+          new Polynomial(null, a.minus(p.a), p.deg);
+        else
+          new Polynomial(p, a.simplify(), deg);
+      else if (this.deg == p.deg) then
+        suivant.minusSimplePoly(new Polynomial(null, a.minus(p.a), deg));
+      else
+        new Polynomial(this.suivant.minusSimplePoly(p), a.simplify(), deg);
+
+    def minus(p : Polynomial): Polynomial =
+      if(p.suivant == null) then
+        this.minusSimplePoly(p);
+      else
+        new Polynomial(this.suivant.minusSimplePoly(p), a.simplify(), deg);
+
+    def timesSimplePoly(p : Polynomial): Polynomial =
+      if(suivant == null) then
+        new Polynomial(null, a.times(p.a), deg + p.deg)
+      else
+        new Polynomial(this.suivant.minusSimplePoly(p), a.times(p.a), deg + p.deg);
+
+    def times(p: Polynomial): Polynomial =
+      if(p.suivant == null) then
+        this.timesSimplePoly(p);
+      else
+        new Polynomial(this.suivant.timesSimplePoly(p), a.simplify(), deg).simplify();
+
+    def limitSimplePoly():RationalLimit =
+      if(deg ==0 ) then
+        new RationalLimit(false, a.numerateur, a.denominateur);
+      else if(a.numerateur == 0) then
+        new RationalLimit(false, 0, 0);
+      else
+        new RationalLimit(true, a.numerateur, a.denominateur);
+
+    //TODO les tests de limit
+    def limit(plusGrand : Polynomial): RationalLimit =
+      if(suivant == null) then
+        if(plusGrand.deg < this.deg) then
+          this.limitSimplePoly();
+        else if(plusGrand.deg > this.deg) then
+          plusGrand.limitSimplePoly();
+        else if (plusGrand.a.compare(this.a) < 0) then
+          this.limitSimplePoly();
+        else
+          plusGrand.limitSimplePoly();
+      else
+        if(plusGrand.deg < this.deg) then
+          suivant.limit(this);
+        else if(plusGrand.deg > this.deg) then
+          suivant.limit(plusGrand)
+        else if (plusGrand.a.compare(this.a) < 0) then
+          suivant.limit(this);
+        else
+          suivant.limit(plusGrand)
+
+
+    def containsSimple(p : Polynomial): Boolean =
+      if(suivant == null) then
+        a.equals(p.a) && deg == p.deg
+      else
+        (a.equals(p.a) && deg == p.deg) || suivant.containsSimple(p)
+
+    def contains(p: Polynomial): Boolean =
+      if(p.suivant == null) then
+        this.containsSimple(p);
+      else
+        this.containsSimple(p) && this.contains(p.suivant)
+
+    override def equals(p : Any): Boolean =
+      this.contains(p.asInstanceOf[Polynomial]) && p.asInstanceOf[Polynomial].contains(this);
+
+  }
+
+
+
+  enum ArithExpr:
+    case Variable
+    case Constant(v: Rational)
+    case Neg(a: ArithExpr)
+    case Add(left: ArithExpr, right: ArithExpr)
+    case Sub(left: ArithExpr, right: ArithExpr)
+    case Mult(left: ArithExpr, right: ArithExpr)
+    case Div(left: ArithExpr, right: ArithExpr)
+    case Pow(left: ArithExpr, exp: ArithExpr)
+
+    def eval(x: Rational): Rational = this match {
+      case ArithExpr.Variable => x
+      case ArithExpr.Constant(v: Rational) => v
+      case ArithExpr.Neg(a: ArithExpr) => a.eval(x).negate()
+      case ArithExpr.Add(left: ArithExpr, right: ArithExpr) => left.eval(x).plus(right.eval(x))
+      case ArithExpr.Sub(left: ArithExpr, right: ArithExpr) => left.eval(x).minus(right.eval(x))
+      case ArithExpr.Mult(left: ArithExpr, right: ArithExpr) => left.eval(x).times(right.eval(x))
+      case ArithExpr.Div(left: ArithExpr, right: ArithExpr) => left.eval(x).div(right.eval(x))
+      case ArithExpr.Pow(left: ArithExpr, deg: ArithExpr) => left.eval(x).pow(new RationalIsFractional().toInt(deg.eval(x)))
+    }
+
+    def lim(x: RationalLimit): RationalLimit = this match {
+      case ArithExpr.Variable => x
+      case ArithExpr.Constant(v: Rational) => new RationalLimit(false, v.numerateur, v.denominateur)
+      case ArithExpr.Neg(a: ArithExpr) => a.lim(x).negate()
+      case ArithExpr.Add(left: ArithExpr, right: ArithExpr) => left.lim(x).plus(right.lim(x))
+      case ArithExpr.Sub(left: ArithExpr, right: ArithExpr) => left.lim(x).minus(right.lim(x))
+      case ArithExpr.Mult(left: ArithExpr, right: ArithExpr) => left.lim(x).times(right.lim(x))
+      case ArithExpr.Div(left: ArithExpr, right: ArithExpr) => left.lim(x).div(right.lim(x))
+      case ArithExpr.Pow(left: ArithExpr, deg: ArithExpr) => left.lim(x).pow(new RationalIsFractional().toInt(deg.lim(x)))
+    }
+
+
 
   class SymbolicFunction(operation: ArithExpr) {
     def eval(x: Rational): Rational = operation.eval(x)
