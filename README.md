@@ -35,6 +35,7 @@ On a pu donc implémenter les fonctions d'intéractions des infini et des ration
 ```JAVA
 class Polynomial(val suivant: Polynomial, val a: Rational, var deg: Int) {...}
 ```
+Cette classe permet de représenter des polynômes avec des coefficients rationnels. Ils sont représentés sous forme de liste chaîné, on peut donc ajouter des polynômes les uns à la suite des autres. Avec cette classes, il est possible d'ajouter, de soustraire, de multiplier, de diviser, d'évaluer, de dériver et de trouver les la limites de polynômes.
 ```JAVA
 enum ArithExpr: ...
 ```
