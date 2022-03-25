@@ -35,12 +35,4 @@ class TestSymbolicFunction extends AnyFlatSpec {
     f2.lim(new RationalLimit(false, -3, 1)) shouldBe new RationalLimit(false, -3, 1);
     // [ArithmeticException] thrownBy f2.lim(new RationalLimit(true, -1, 1));
   }
-
-  "Derivate" should "be defined" in {
-    // (2+x)*3/2
-    val f1 = new SymbolicFunction(ArithExpr.Mult(ArithExpr.Constant(new Rational(3, 2)), ArithExpr.Variable));
-
-    println(f1)
-    println(f1.derivate())
-  }
 }

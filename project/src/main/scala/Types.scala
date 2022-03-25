@@ -291,9 +291,7 @@ object Types {
       this.contains(p.asInstanceOf[Polynomial]) && p.asInstanceOf[Polynomial].contains(this);
 
   }
-
-
-
+  
   enum ArithExpr:
     case Variable
     case Constant(v: Rational)
@@ -303,6 +301,11 @@ object Types {
     case Mult(left: ArithExpr, right: ArithExpr)
     case Div(left: ArithExpr, right: ArithExpr)
     case Pow(left: ArithExpr, exp: ArithExpr)
+    // Fct that can be add that would have been usefull
+    // case Log(a: ArithExpr)
+    // case cos(a: ArithExpr)
+    // case sin(a: ArithExpr)
+    // case tan(a: ArithExpr)
 
     def eval(x: Rational): Rational = this match {
       case ArithExpr.Variable => x
@@ -347,7 +350,7 @@ object Types {
         else if right == ArithExpr.Constant then ArithExpr.Mult(right, left.derivate())
         else ArithExpr.Add(ArithExpr.Mult(left.derivate(), right), ArithExpr.Mult(left, right.derivate()))
       case ArithExpr.Div(left: ArithExpr, right: ArithExpr) => ArithExpr.Div(ArithExpr.Sub(ArithExpr.Mult(left.derivate(), right), ArithExpr.Mult(left, right.derivate())), ArithExpr.Mult(right, right))
-      case ArithExpr.Pow(left: ArithExpr, deg: ArithExpr) => ??? //vu^(v−1u)′+log(u)u^(v)v′.
+      case ArithExpr.Pow(left: ArithExpr, deg: ArithExpr) => ??? // vu^(v−1u)′+log(u)u^(v)v′ => need cos fct
     }
 
     override def toString: String = this match {
