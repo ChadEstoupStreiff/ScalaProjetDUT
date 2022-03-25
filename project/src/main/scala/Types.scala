@@ -1,6 +1,8 @@
 import scala.annotation.tailrec
 object Types {
   class Rational(val numerateur: Int, val denominateur: Int) {
+    def copy(): Rational = new Rational(numerateur, denominateur)
+
     def negate(): Rational = new Rational(numerateur * -1, denominateur)
 
     def invert(): Rational = new Rational(denominateur, numerateur)
@@ -162,6 +164,12 @@ object Types {
 
   class Polynomial(val suivant: Polynomial, val a: Rational, var deg: Int) {
 
+    def copy(): Polynomial =
+      if suivant == null then
+        new Polynomial(null, a.copy(), deg)
+      else
+        new Polynomial(suivant.copy(), a.copy(), deg)
+
     override def toString: String =
       if(suivant == null) then
         if(deg == 0) then
@@ -175,25 +183,25 @@ object Types {
           a.toString() + "x^" + deg + " + " + suivant.toString();
 
     def eval(x: Rational): Rational =
-      if (deg == 0 || suivant == null) then
-        a
+      if (suivant == null) then
+        a.times(x.pow(deg))
       else
-        a.pow(deg).plus(suivant.eval(suivant.a));
+        a.times(x.pow(deg)).plus(suivant.eval(suivant.a));
 
     def concatenate(p : Polynomial): Polynomial =
       if (suivant == null) then
-        new Polynomial(p, this.a, this.deg);
+        new Polynomial(p.copy(), this.a.copy(), this.deg);
       else
-        new Polynomial(suivant.concatenate(p), a, deg);
+        new Polynomial(suivant.concatenate(p), a.copy(), deg);
 
     def plusSimplePoly(p : Polynomial): Polynomial = //ajoute un simple poly a this
       if(suivant == null) then
         if(this.deg == p.deg)then
           new Polynomial(null, a.plus(p.a), p.deg);
         else
-          new Polynomial(p, a.simplify(), deg);
+          new Polynomial(new Polynomial(null, p.a.copy(), p.deg), a.simplify(), deg);
       else if (this.deg == p.deg) then
-        suivant.plusSimplePoly(new Polynomial(null, a.plus(p.a), deg));
+        new Polynomial(suivant.copy(), a.plus(p.a), deg);
       else
         new Polynomial(this.suivant.plusSimplePoly(p), a.simplify(), deg);
 
@@ -201,16 +209,16 @@ object Types {
       if(p.suivant == null) then
         this.plusSimplePoly(p);
       else
-        this.plusSimplePoly(new Polynomial(null, p.a, p.deg)).plus(p.suivant);
+        this.plusSimplePoly(new Polynomial(null, p.a.copy(), p.deg)).plus(p.suivant);
 
     def minusSimplePoly(p : Polynomial): Polynomial =
       if(suivant == null) then
         if(this.deg == p.deg)then
-          new Polynomial(null, a.minus(p.a), p.deg);
+          new Polynomial(null, a.minus(p.a), deg);
         else
-          new Polynomial(p, a.simplify(), deg);
+          new Polynomial(new Polynomial(null, p.a.copy(), p.deg), a.simplify(), deg);
       else if (this.deg == p.deg) then
-        suivant.minusSimplePoly(new Polynomial(null, a.minus(p.a), deg));
+        new Polynomial(suivant.copy(), a.minus(p.a), deg);
       else
         new Polynomial(this.suivant.minusSimplePoly(p), a.simplify(), deg);
 
@@ -218,20 +226,22 @@ object Types {
       if(p.suivant == null) then
         this.minusSimplePoly(p);
       else
-        this.minusSimplePoly(new Polynomial(null, p.a, p.deg)).minus(p.suivant);
+        this.minusSimplePoly(new Polynomial(null, p.a.copy(), p.deg)).minus(p.suivant);
 
     def simplify(): Polynomial =
-      if(suivant == null) then
-        this.plusSimplePoly(new Polynomial(null, a, deg));
+      if (suivant == null) then
+        copy()
       else
-        suivant.plusSimplePoly(new Polynomial(null, a, deg)).simplify();
+        suivant.simplify().plusSimplePoly(this)
 
+    //TODO
     def timesSimplePoly(p : Polynomial): Polynomial =
       if(suivant == null) then
         new Polynomial(null, a.times(p.a), deg + p.deg)
       else
         new Polynomial(this.suivant.minusSimplePoly(p), a.times(p.a), deg + p.deg);
 
+    //TODO
     def times(p: Polynomial): Polynomial =
       if(p.suivant == null) then
         this.timesSimplePoly(p);
@@ -283,8 +293,6 @@ object Types {
       this.contains(p.asInstanceOf[Polynomial]) && p.asInstanceOf[Polynomial].contains(this);
 
   }
-
-
 
   enum ArithExpr:
     case Variable
@@ -352,11 +360,6 @@ object Types {
       case ArithExpr.Div(left: ArithExpr, right: ArithExpr) => "(" + left.toString + ")/(" + right.toString + ")"
       case ArithExpr.Pow(left: ArithExpr, deg: ArithExpr) => "(" + left.toString + ")^(" + deg.toString + ")"
     }
-
-
-
-
-
 
   class SymbolicFunction(operation: ArithExpr) {
     def eval(x: Rational): Rational = operation.eval(x)
