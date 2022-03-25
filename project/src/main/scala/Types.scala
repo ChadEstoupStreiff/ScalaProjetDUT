@@ -1,6 +1,8 @@
 import scala.annotation.tailrec
 object Types {
   class Rational(val numerateur: Int, val denominateur: Int) {
+    def copy(): Rational = new Rational(numerateur, denominateur)
+
     def negate(): Rational = new Rational(numerateur * -1, denominateur)
 
     def invert(): Rational = new Rational(denominateur, numerateur)
@@ -83,7 +85,7 @@ object Types {
     override def invert(): RationalLimit =
       val l = super.invert(); new RationalLimit(infinite, l.numerateur, l.denominateur)
 
-    override def plus(rational: Rational): Rational = super.plus(rational.asInstanceOf[RationalLimit])
+    override def plus(rational: Rational): Rational = super.plus(new RationalLimit(false, rational.numerateur, rational.denominateur))
 
     def plus(rational: RationalLimit): RationalLimit = infinite match {
       case true => rational.infinite match {
@@ -105,15 +107,15 @@ object Types {
       }
       case false => rational.infinite match {
         case true => new RationalLimit(rational.infinite, rational.numerateur, rational.denominateur)
-        case false => new RationalLimit(false, numerateur - rational.numerateur, denominateur - rational.denominateur)
+        case false => new RationalLimit(false, numerateur*rational.denominateur - rational.numerateur*denominateur, denominateur * rational.denominateur)
       }
     }
 
-    override def times(rational: Rational): Rational = super.times(rational.asInstanceOf[RationalLimit])
+    override def times(rational: Rational): Rational = super.times(new RationalLimit(false, rational.numerateur, rational.denominateur))
 
     def times(rational: RationalLimit): RationalLimit = new RationalLimit(infinite || rational.infinite, numerateur * rational.numerateur, denominateur * rational.denominateur)
 
-    override def div(rational: Rational): Rational = super.div(rational.asInstanceOf[RationalLimit])
+    override def div(rational: Rational): Rational = super.div(new RationalLimit(false, rational.numerateur, rational.denominateur))
 
     def div(rational: RationalLimit): RationalLimit = infinite match {
       case true => rational.infinite match {
@@ -127,7 +129,7 @@ object Types {
     }
 
     override def pow(deg: Int): RationalLimit = infinite match {
-      case true => new RationalLimit(infinite, numerateur, denominateur)
+      case true => if deg == 0 then new RationalLimit(false, 1, 1) else if deg > 0 then new RationalLimit(infinite, numerateur, denominateur) else new RationalLimit(infinite, -numerateur, denominateur)
       case false => val l = super.pow(deg); new RationalLimit(infinite, l.numerateur, l.denominateur)
     }
 
@@ -136,12 +138,15 @@ object Types {
       case false => val l = super.simplify(); new RationalLimit(infinite, l.numerateur, l.denominateur)
     }
 
-    override def compare(rational: Rational): Int = this.compare(rational.asInstanceOf[RationalLimit])
+    override def compare(rational: Rational): Int = this.compare(new RationalLimit(false, rational.numerateur, rational.denominateur))
 
     def compare(rational: RationalLimit): Int = infinite match {
-      case true => if isPositive() then 1 else -1
+      case true => rational.infinite match {
+        case true => if isPositive() == rational.isPositive() then 0 else if isPositive() then 1 else -1
+        case false => if isPositive() then 1 else -1
+      }
       case false => rational.infinite match {
-        case true => rational.compare(this)
+        case true => if rational.isPositive() then -1 else 1
         case false => super.compare(rational)
       }
     }
@@ -156,7 +161,14 @@ object Types {
       case false => super.toString()
     }
   }
+
   class Polynomial(val suivant: Polynomial, val a: Rational, var deg: Int) {
+
+    def copy(): Polynomial =
+      if suivant == null then
+        new Polynomial(null, a.copy(), deg)
+      else
+        new Polynomial(suivant.copy(), a.copy(), deg)
 
     override def toString: String =
       if (suivant == null) then
@@ -170,25 +182,25 @@ object Types {
         a.toString() + "x^" + deg + " + " + suivant.toString();
 
     def eval(x: Rational): Rational =
-      if (deg == 0 || suivant == null) then
-        a
+      if (suivant == null) then
+        a.times(x.pow(deg))
       else
-        a.pow(deg).plus(suivant.eval(suivant.a));
+        a.times(x.pow(deg)).plus(suivant.eval(suivant.a));
 
     def concatenate(p : Polynomial): Polynomial =
       if (suivant == null) then
-        new Polynomial(p, this.a, this.deg);
+        new Polynomial(p.copy(), this.a.copy(), this.deg);
       else
-        new Polynomial(suivant.concatenate(p), a, deg);
+        new Polynomial(suivant.concatenate(p), a.copy(), deg);
 
     def plusSimplePoly(p : Polynomial): Polynomial = //ajoute un simple poly a this
       if(suivant == null) then
         if(this.deg == p.deg)then
           new Polynomial(null, a.plus(p.a), p.deg);
         else
-          new Polynomial(p, a.simplify(), deg);
+          new Polynomial(new Polynomial(null, p.a.copy(), p.deg), a.simplify(), deg);
       else if (this.deg == p.deg) then
-        suivant.plusSimplePoly(new Polynomial(null, a.plus(p.a), deg));
+        new Polynomial(suivant.copy(), a.plus(p.a), deg);
       else
         new Polynomial(this.suivant.plusSimplePoly(p), a.simplify(), deg);
 
@@ -196,16 +208,16 @@ object Types {
       if(p.suivant == null) then
         this.plusSimplePoly(p);
       else
-        this.plusSimplePoly(new Polynomial(null, p.a, p.deg)).plus(p.suivant);
+        this.plusSimplePoly(new Polynomial(null, p.a.copy(), p.deg)).plus(p.suivant);
 
     def minusSimplePoly(p : Polynomial): Polynomial =
       if(suivant == null) then
         if(this.deg == p.deg)then
-          new Polynomial(null, a.minus(p.a), p.deg);
+          new Polynomial(null, a.minus(p.a), deg);
         else
-          new Polynomial(p, a.simplify(), deg);
+          new Polynomial(new Polynomial(null, p.a.copy(), p.deg), a.simplify(), deg);
       else if (this.deg == p.deg) then
-        suivant.minusSimplePoly(new Polynomial(null, a.minus(p.a), deg));
+        new Polynomial(suivant.copy(), a.minus(p.a), deg);
       else
         new Polynomial(this.suivant.minusSimplePoly(p), a.simplify(), deg);
 
@@ -213,20 +225,22 @@ object Types {
       if(p.suivant == null) then
         this.minusSimplePoly(p);
       else
-        this.minusSimplePoly(new Polynomial(null, p.a, p.deg)).minus(p.suivant);
+        this.minusSimplePoly(new Polynomial(null, p.a.copy(), p.deg)).minus(p.suivant);
 
     def simplify(): Polynomial =
-      if(suivant == null) then
-        this.plusSimplePoly(new Polynomial(null, a, deg));
+      if (suivant == null) then
+        copy()
       else
-        suivant.plusSimplePoly(new Polynomial(null, a, deg)).simplify();
+        suivant.simplify().plusSimplePoly(this)
 
+    //TODO
     def timesSimplePoly(p : Polynomial): Polynomial =
       if(suivant == null) then
         new Polynomial(null, a.times(p.a), deg + p.deg)
       else
         new Polynomial(this.suivant.minusSimplePoly(p), a.times(p.a), deg + p.deg);
 
+    //TODO
     def times(p: Polynomial): Polynomial =
       if(p.suivant == null) then
         this.timesSimplePoly(p);
@@ -301,20 +315,6 @@ object Types {
       case ArithExpr.Pow(left: ArithExpr, deg: ArithExpr) => left.eval(x).pow(new RationalIsFractional().toInt(deg.eval(x)))
     }
 
-    def derivate(): ArithExpr = this match {
-      case ArithExpr.Variable => ArithExpr.Constant(new Rational(1, 1))
-      case ArithExpr.Constant(v: Rational) => ArithExpr.Constant(new Rational(0, 1))
-      case ArithExpr.Neg(a: ArithExpr) => ArithExpr.Neg(a.derivate())
-      case ArithExpr.Add(left: ArithExpr, right: ArithExpr) => ArithExpr.Add(left.derivate(), right.derivate())
-      case ArithExpr.Sub(left: ArithExpr, right: ArithExpr) => ArithExpr.Sub(left.derivate(), right.derivate())
-      case ArithExpr.Mult(left: ArithExpr, right: ArithExpr) =>
-        if left == ArithExpr.Constant then ArithExpr.Mult(left, right.derivate())
-        else if right == ArithExpr.Constant then ArithExpr.Mult(right, left.derivate())
-        else ArithExpr.Add(ArithExpr.Mult(left.derivate(), right), ArithExpr.Mult(left, right.derivate()))
-      case ArithExpr.Div(left: ArithExpr, right: ArithExpr) => ArithExpr.Div(ArithExpr.Sub(ArithExpr.Mult(left.derivate(), right), ArithExpr.Mult(left, right.derivate())), ArithExpr.Mult(right, right))
-      case ArithExpr.Pow(left: ArithExpr, deg: ArithExpr) => ??? //vu^(v−1u)′+log(u)u^(v)v′.
-    }
-
     def lim(x: RationalLimit): RationalLimit = this match {
       case ArithExpr.Variable => x
       case ArithExpr.Constant(v: Rational) => new RationalLimit(false, v.numerateur, v.denominateur)
@@ -335,6 +335,21 @@ object Types {
           case false => if c.infinite then if l.isPositive() then new RationalLimit(true, 1, 1) else new RationalLimit(true, -1, 1) else left.lim(x).pow(new RationalIsFractional().toInt(deg.lim(x)))
         }
     }
+
+    def derivate(): ArithExpr = this match {
+      case ArithExpr.Variable => ArithExpr.Constant(new Rational(1, 1))
+      case ArithExpr.Constant(v: Rational) => ArithExpr.Constant(new Rational(0, 1))
+      case ArithExpr.Neg(a: ArithExpr) => ArithExpr.Neg(a.derivate())
+      case ArithExpr.Add(left: ArithExpr, right: ArithExpr) => ArithExpr.Add(left.derivate(), right.derivate())
+      case ArithExpr.Sub(left: ArithExpr, right: ArithExpr) => ArithExpr.Sub(left.derivate(), right.derivate())
+      case ArithExpr.Mult(left: ArithExpr, right: ArithExpr) =>
+        if left == ArithExpr.Constant then ArithExpr.Mult(left, right.derivate())
+        else if right == ArithExpr.Constant then ArithExpr.Mult(right, left.derivate())
+        else ArithExpr.Add(ArithExpr.Mult(left.derivate(), right), ArithExpr.Mult(left, right.derivate()))
+      case ArithExpr.Div(left: ArithExpr, right: ArithExpr) => ArithExpr.Div(ArithExpr.Sub(ArithExpr.Mult(left.derivate(), right), ArithExpr.Mult(left, right.derivate())), ArithExpr.Mult(right, right))
+      case ArithExpr.Pow(left: ArithExpr, deg: ArithExpr) => ??? //vu^(v−1u)′+log(u)u^(v)v′.
+    }
+
     override def toString: String = this match {
       case ArithExpr.Variable => "x"
       case ArithExpr.Constant(v: Rational) => v.toString
@@ -346,11 +361,10 @@ object Types {
       case ArithExpr.Pow(left: ArithExpr, deg: ArithExpr) => "(" + left.toString + ")^(" + deg.toString + ")"
     }
 
-
   class SymbolicFunction(operation: ArithExpr) {
     def eval(x: Rational): Rational = operation.eval(x)
-    def derivate(): SymbolicFunction = new SymbolicFunction(operation.derivate())
     def lim(x: RationalLimit): RationalLimit = operation.lim(x)
+    def derivate(): SymbolicFunction = new SymbolicFunction(operation.derivate())
 
     override def toString: String = operation.toString
   }
