@@ -237,7 +237,7 @@ object Types {
     }
 
 
-  class Polynomial(val suivant: Polynomial, val a: Rational, var deg: Int) {
+  class Polynomial(val suivant: Polynomial, val a: Rational, val deg: Int) {
 
     def copy(): Polynomial =
       if suivant == null then
@@ -287,9 +287,9 @@ object Types {
 
     def plus(p : Polynomial): Polynomial =
       if(p.suivant == null) then
-        this.plusSimplePoly(p);
+        this.plusSimplePoly(p).simplify();
       else
-        this.plusSimplePoly(new Polynomial(null, p.a.copy(), p.deg)).plus(p.suivant);
+        this.plusSimplePoly(new Polynomial(null, p.a.copy(), p.deg)).plus(p.suivant).simplify();
 
     def minusSimplePoly(p : Polynomial): Polynomial =
       if(suivant == null) then
@@ -304,9 +304,9 @@ object Types {
 
     def minus(p : Polynomial): Polynomial =
       if(p.suivant == null) then
-        this.minusSimplePoly(p);
+        this.minusSimplePoly(p).simplify();
       else
-        this.minusSimplePoly(new Polynomial(null, p.a.copy(), p.deg)).minus(p.suivant);
+        this.minusSimplePoly(new Polynomial(null, p.a.copy(), p.deg)).minus(p.suivant).simplify();
 
     def simplify(): Polynomial =
       if (suivant == null) then
@@ -317,9 +317,9 @@ object Types {
 
     def timesSimplePoly(p : Polynomial): Polynomial =
       if(suivant == null) then
-        new Polynomial(null, a.times(p.a), deg + p.deg)
+        new Polynomial(null, a.times(p.a), deg + p.deg).simplify();
       else
-        new Polynomial(this.suivant.minusSimplePoly(p), a.times(p.a), deg + p.deg);
+        new Polynomial(this.suivant.minusSimplePoly(p), a.times(p.a), deg + p.deg).simplify();
 
 
     def times(p: Polynomial): Polynomial =
@@ -330,14 +330,14 @@ object Types {
 
     def divSimplePoly(p : Polynomial): Polynomial =
       if(suivant == null) then
-        new Polynomial(null, a.div(p.a), deg - p.deg)
+        new Polynomial(null, a.div(p.a), deg - p.deg).simplify();
       else
-        new Polynomial(this.suivant.minusSimplePoly(p), a.div(p.a), deg - p.deg);
+        new Polynomial(this.suivant.minusSimplePoly(p), a.div(p.a), deg - p.deg).simplify();
 
 
     def div(p: Polynomial): Polynomial =
       if(p.suivant == null) then
-        this.divSimplePoly(p);
+        this.divSimplePoly(p).simplify();
       else
         new Polynomial(this.suivant.divSimplePoly(p), a.simplify(), deg).simplify();
 
@@ -371,14 +371,14 @@ object Types {
     def derivee(): Polynomial =
       if(suivant == null) then
         if(deg !=0) then
-          new Polynomial(null,a.times(new Rational(deg, 1)), deg-1);
+          new Polynomial(null,a.times(new Rational(deg, 1)), deg-1).simplify();
         else
           null;
       else
         if(deg !=0) then
-          new Polynomial(suivant.derivee(), a.times(new Rational(deg, 1)), deg-1);
+          new Polynomial(suivant.derivee(), a.times(new Rational(deg, 1)), deg-1).simplify();
         else
-          new Polynomial(suivant.suivant.derivee(), suivant.a.times(new Rational(suivant.deg, 1)), suivant.deg-1);
+          new Polynomial(suivant.suivant.derivee(), suivant.a.times(new Rational(suivant.deg, 1)), suivant.deg-1).simplify();
 
 
     def containsSimple(p : Polynomial): Boolean =

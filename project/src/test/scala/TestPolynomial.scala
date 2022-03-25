@@ -62,6 +62,18 @@ class TestPolynomial extends AnyFlatSpec{
     println("limitExp : " + limitExp);
     limitActual.equals(limitExp) shouldBe true;
 
+    //derivee
+    val deriveeExp = new Polynomial(null, new Rational(10,1), 1);
+    val deriveeActual = p8.derivee();
+    println("deriveeActual : " +deriveeActual);
+    println("deriveeExp : " + deriveeExp);
+    deriveeActual.equals(deriveeExp) shouldBe true;
+
+    val derivee2Exp = new Polynomial(new Polynomial(null, new Rational(7,1), 0), new Rational(6,1), 1);
+    val derivee2Actual = p6Bis.derivee();
+    println("derivee2Actual : " +derivee2Actual);
+    println("derivee2Exp : " + derivee2Exp);
+    derivee2Actual.equals(derivee2Exp) shouldBe true;
   }
 
 }
