@@ -181,6 +181,12 @@ object Types {
       else
         a.toString() + "x^" + deg + " + " + suivant.toString();
 
+    def toArith(): ArithExpr =
+      if (suivant == null)
+        ArithExpr.Mult(ArithExpr.Constant(a.copy()), ArithExpr.Pow(ArithExpr.Variable, ArithExpr.Constant(new Rational(deg, 1))))
+      else
+        ArithExpr.Add(ArithExpr.Mult(ArithExpr.Constant(a.copy()), ArithExpr.Pow(ArithExpr.Variable, ArithExpr.Constant(new Rational(deg, 1)))), suivant.toArith())
+
     def eval(x: Rational): Rational =
       if (suivant == null) then
         a.times(x.pow(deg))
@@ -291,7 +297,7 @@ object Types {
       this.contains(p.asInstanceOf[Polynomial]) && p.asInstanceOf[Polynomial].contains(this);
 
   }
-  
+
   enum ArithExpr:
     case Variable
     case Constant(v: Rational)
