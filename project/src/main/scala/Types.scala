@@ -104,6 +104,19 @@ object Types {
       else
         new Polynomial(suivant.concatenate(p), a, deg);
 
+    def remove(p : Polynomial): Polynomial =
+      if(suivant == null) then
+        if(this.equals(p)) then
+          null;
+        else
+          new Polynomial(null, a, deg);
+      else
+        if(this.equals(p)) then
+          new Polynomial(suivant.suivant, suivant.a, suivant.deg);
+        else
+          suivant.remove(p);
+
+
     def plusSimplePoly(p : Polynomial): Polynomial = //ajoute un simple poly a this
       if(suivant == null) then
         if(this.deg == p.deg)then
@@ -121,6 +134,14 @@ object Types {
       else
         this.plusSimplePoly(new Polynomial(null, p.a, p.deg)).plus(p.suivant);
 
+    def simplify(): Polynomial =
+      if(suivant == null) then
+        new Polynomial(null, a, deg);
+      else
+        this.remove(new Polynomial(null, a, deg));
+        var p = suivant.plusSimplePoly(new Polynomial(null, a, deg));
+        p.simplify();
+
     def minusSimplePoly(p : Polynomial): Polynomial =
       if(suivant == null) then
         if(this.deg == p.deg)then
@@ -136,13 +157,13 @@ object Types {
       if(p.suivant == null) then
         this.minusSimplePoly(p);
       else
-        this.minusSimplePoly(new Polynomial(null, p.a, p.deg)).minus(p.suivant);
+        new Polynomial(this.suivant.minusSimplePoly(p), a.simplify(), deg);
 
-    def simplify(): Polynomial =
+    def timesSimplePoly(p : Polynomial): Polynomial =
       if(suivant == null) then
-        this.plusSimplePoly(new Polynomial(null, a, deg));
+        new Polynomial(null, a.times(p.a), deg + p.deg)
       else
-        suivant.plusSimplePoly(new Polynomial(null, a, deg)).simplify();
+        new Polynomial(this.suivant.minusSimplePoly(p), a.times(p.a), deg + p.deg);
 
     def containsSimple(p : Polynomial): Boolean =
       if(suivant == null) then
