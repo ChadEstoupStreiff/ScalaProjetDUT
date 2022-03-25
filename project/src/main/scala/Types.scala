@@ -328,6 +328,19 @@ object Types {
       else
         new Polynomial(this.suivant.timesSimplePoly(p), a.simplify(), deg).simplify();
 
+    def divSimplePoly(p : Polynomial): Polynomial =
+      if(suivant == null) then
+        new Polynomial(null, a.div(p.a), deg - p.deg)
+      else
+        new Polynomial(this.suivant.minusSimplePoly(p), a.div(p.a), deg - p.deg);
+
+
+    def div(p: Polynomial): Polynomial =
+      if(p.suivant == null) then
+        this.divSimplePoly(p);
+      else
+        new Polynomial(this.suivant.divSimplePoly(p), a.simplify(), deg).simplify();
+
     def limitSimplePoly(): RationalLimit =
       if (deg == 0) then
         new RationalLimit(false, a.numerateur, a.denominateur);
